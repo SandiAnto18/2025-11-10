@@ -8,10 +8,25 @@ class Controller:
         # the model, which implements the logic of the program and holds the data
         self._model = model
 
+    def fillDDStores(self):
+        store = self._model.getStores()
+
+        for s in store:
+            self._view._ddStore.options.append(ft.dropdown.Option(s))
+
+        self._view.update_page()
 
     def handleCreaGrafo(self, e):
-        pass
 
+        ## RECUPERO LO STORE SELEZIONATO E COSTRUISCO IL GRAFO
+        self._model.buildGraph(self._view._ddStore.value)
+        # SVUOTO IL RISULTATO PRECEDENTE
+        self._view.txt_result.controls.clear()
+        # comando per aggiungere righe testuali/numero in output
+        self._view.txt_result.controls.append(ft.Text("Grafo correttamente creato:"))
+        self._view.txt_result.controls.append(ft.Text(f"Numero di nodi:{self._model.getNodes()}"))
+        self._view.txt_result.controls.append(ft.Text(f"Numero di archi:{self._model.getEdges()}"))
+        self._view.update_page()
     def handleCerca(self, e):
         pass
 
