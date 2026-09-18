@@ -10,7 +10,7 @@ class Model:
 
     def getStores(self):
         return DAO.getAllStores()
-    def buildGraph(self,store_name):
+    def buildGraph(self,store_name,k):
 
         # SVUOTO IL GRAFO PRECEDENTE
         self._graph.clear()
@@ -21,8 +21,18 @@ class Model:
         # AGGIUNGO GLI ORDINI COME NODI DEL GRAFO
         self._graph.add_nodes_from(orders)
 
+        arco = DAO.getOrder1Order2(store_name,k)
+
+        self._graph.add_edges_from(arco)
+
+        peso= /k
+
     def getNodes(self):
         return len(self._graph.nodes())
 
     def getEdges(self):
         return len(self._graph.edges())
+
+    def getTop5(self):
+        edges = sorted(self._graph.edges(data=True), key=lambda x: x[2]['weight'], reverse=True)
+        return edges[:5]

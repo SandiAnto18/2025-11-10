@@ -18,8 +18,8 @@ class Controller:
 
     def handleCreaGrafo(self, e):
 
-        ## RECUPERO LO STORE SELEZIONATO E COSTRUISCO IL GRAFO
-        self._model.buildGraph(self._view._ddStore.value)
+        ## RECUPERO LO STORE SELEZIONATO E IL VALORE K INSERITO DALL'UTENTE nella VIEW
+        self._model.buildGraph(self._view._ddStore.value,self._view._txtIntK.value)
         # SVUOTO IL RISULTATO PRECEDENTE
         self._view.txt_result.controls.clear()
         # comando per aggiungere righe testuali/numero in output
