@@ -21,11 +21,19 @@ class Model:
         # AGGIUNGO GLI ORDINI COME NODI DEL GRAFO
         self._graph.add_nodes_from(orders)
 
-        arco = DAO.getOrder1Order2(store_name,k)
+        # RECUPERO LE COPPIE DI ORDINI CON LE QUANTITÀ E I GIORNI
+        archi = DAO.getOrder1Order2(store_name,k)
 
-        self._graph.add_edges_from(arco)
+        for row in archi:
+            #da DAO.getOrder1Order2 arriva order1=row[0],order2=row[1],....
+            #calcolo il peso dell'arco
+            peso=(row[2]+row[3])/row[4]
+            # AGGIUNGO L'ARCO ORIENTATO CON IL SUO PESO
+            self._graph.add_edge(row[0],row[1],weight=peso)
 
-        peso= /k
+
+
+
 
     def getNodes(self):
         return len(self._graph.nodes())
@@ -36,3 +44,4 @@ class Model:
     def getTop5(self):
         edges = sorted(self._graph.edges(data=True), key=lambda x: x[2]['weight'], reverse=True)
         return edges[:5]
+    #output (order1,order2,{"weight": peso})

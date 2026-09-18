@@ -39,6 +39,10 @@ and s.store_id =o.store_id """
         return results
 
     @staticmethod
+    #AATENZIONE: (numero_TOTALE_oggetti_nei_due_ordini)
+    # INTENDE quanti sono gli articoli(items) ordinati di un ordine,
+    # quindi la quantità totale di articoli per coppia di ordini
+    #K = NUMERO MAX DI GIORNI
     def getOrder1Order2(store_name,k):
         conn = DBConnect.get_connection()
 
@@ -46,34 +50,47 @@ and s.store_id =o.store_id """
 
         cursor = conn.cursor(dictionary=True)
         query = """
-SELECT o1.order_id as order1, o2.order_id as order2
+        SELECT o1.order_id AS order1,
+               o2.order_id AS order2,
+               q1.quantita AS quantita1,
+               q2.quantita AS quantita2,
+               DATEDIFF(o2.order_date, o1.order_date) AS giorni_tra_ordini
 
-FROM orders o1, orders o2, stores s
+        FROM orders o1, orders o2, stores s,
 
--- I DUE ORDINI DEVONO APPARTENERE ALLO STESSO STORE
-WHERE o1.store_id = o2.store_id
+             -- CALCOLO PRIMA IL TOTALE DEGLI ARTICOLI DEL PRIMO ORDINE
+             (SELECT order_id, SUM(quantity) AS quantita
+              FROM order_items
+              GROUP BY order_id) q1,
 
--- COLLEGO GLI ORDINI ALLO STORE
-AND s.store_id = o1.store_id
+             -- CALCOLO PRIMA IL TOTALE DEGLI ARTICOLI DEL SECONDO ORDINE
+             (SELECT order_id, SUM(quantity) AS quantita
+              FROM order_items
+              GROUP BY order_id) q2
 
--- o1 DEVE AVERE LA DATA PIÙ PICCOLA E QUINDI ESSERE L'ORDINE PRECEDENTE
--- o2 DEVE AVERE LA DATA PIÙ GRANDE E QUINDI ESSERE L'ORDINE SUCCESSIVO
-AND o1.order_date < o2.order_date
-and s.store_name=%s
+        -- I DUE ORDINI DEVONO APPARTENERE ALLO STESSO STORE
+        WHERE o1.store_id = o2.store_id
 
--- CALCOLO LA DIFFERENZA TRA DATA PIÙ GRANDE E DATA PIÙ PICCOLA (in giorni)
--- LA DISTANZA TRA I DUE ORDINI DEVE ESSERE AL MASSIMO 5 GIORNI
-AND DATEDIFF(o2.order_date, o1.order_date) <= %s
-"""
-        cursor.execute(query, (store_name,k))
+        -- COLLEGO IL TOTALE DEGLI ARTICOLI DEL PRIMO ORDINE AL PRIMO ORDINE
+        AND q1.order_id = o1.order_id
 
-        for row in cursor:
-            #results.append(row["o1.order_id"], row["o2.order_id"]) #cosi non va bene
+        -- COLLEGO IL TOTALE DEGLI ARTICOLI DEL SECONDO ORDINE AL SECONDO ORDINE
+        AND q2.order_id = o2.order_id
 
-            # AGGIUNGO UNA COPPIA DI ORDINI COME UN SOLO ELEMENTO
-            results.append((row["order1"], row["order2"],row["quantita1"],row["quantita2"]))
-           #ogni tupla rapprensenta un arco, esempio: (10,15) = (10->15)
+        -- COLLEGO GLI ORDINI ALLO STORE
+        AND s.store_id = o1.store_id
 
+        -- o1 DEVE AVERE LA DATA PIÙ PICCOLA E QUINDI ESSERE L'ORDINE PRECEDENTE
+        -- o2 DEVE AVERE LA DATA PIÙ GRANDE E QUINDI ESSERE L'ORDINE SUCCESSIVO
+        AND o1.order_date < o2.order_date
+
+        -- CONSIDERO SOLO LO STORE SELEZIONATO DALL'UTENTE
+        AND s.store_name = %s
+
+        -- CALCOLO LA DIFFERENZA TRA DATA PIÙ GRANDE E DATA PIÙ PICCOLA (in giorni)
+        -- LA DISTANZA TRA I DUE ORDINI DEVE ESSERE AL MASSIMO K GIORNI
+        AND DATEDIFF(o2.order_date, o1.order_date) <= %s
+        """
         cursor.close()
         conn.close()
         return results

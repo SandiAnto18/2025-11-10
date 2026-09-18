@@ -26,6 +26,20 @@ class Controller:
         self._view.txt_result.controls.append(ft.Text("Grafo correttamente creato:"))
         self._view.txt_result.controls.append(ft.Text(f"Numero di nodi:{self._model.getNodes()}"))
         self._view.txt_result.controls.append(ft.Text(f"Numero di archi:{self._model.getEdges()}"))
+
+        # RECUPERO I 5 ARCHI CON PESO MAGGIORE
+        top5 = self._model.getTop5()
+
+        self._view.txt_result.controls.append(
+            ft.Text("5 archi di peso maggiore:")
+        )
+
+        # STAMPO I 5 ARCHI
+        for a1, a2, w in top5:
+            self._view.txt_result.controls.append(
+                ft.Text(f"Arco:{a1} -> {a2} -Peso: {w['weight']}")
+            )
+
         self._view.update_page()
     def handleCerca(self, e):
         pass
