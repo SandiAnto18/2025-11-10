@@ -25,11 +25,13 @@ class Model:
         archi = DAO.getOrder1Order2(store_name,k)
 
         for row in archi:
+            #CONTROLLO L'OUTPUT RICEVUTO da DAO.py
+            #print(row[0],row[1],row[2])
             #da DAO.getOrder1Order2 arriva order1=row[0],order2=row[1],....
             #calcolo il peso dell'arco
-            peso=(row[2]+row[3])/row[4]
+
             # AGGIUNGO L'ARCO ORIENTATO CON IL SUO PESO
-            self._graph.add_edge(row[0],row[1],weight=peso)
+            self._graph.add_edge(row[0],row[1],weight=row[2])
 
 
 

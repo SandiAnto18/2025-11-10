@@ -14,7 +14,7 @@ def main(page: ft.Page):
     # CARICO GLI ELEMENTI GRAFICI DELLA VIEW
     my_view.load_interface()
 
-    # RIEMPIO IL DROPDOWN CON GLI STORE PRESI DAL DATABASE
+    # RIEMPO IL DROPDOWN CON GLI STORE PRESI DAL DATABASE
     my_controller.fillDDStores()
 
 
