@@ -97,3 +97,13 @@ and s.store_id =o.store_id """
         return results
 
 
+    #Voglio capire quanti articoli ha un ordine:
+    #SQL SELECT order_id, SUM(quantity)
+    #FROM order_items
+    #GROUP BY order_id;
+
+    #Voglio vedere gli ordini di uno store
+    #SELECT * FROM orders WHERE store_id = 1;
+
+    #GROUP BY raggruppo per order id di cui faccio la somma (oi.sum quantity)
+
