@@ -1,109 +1,81 @@
-
 from database.DB_connect import DBConnect
+from model.order import Order
+
 
 class DAO():
-    @staticmethod
-    def getAllStores():
-        conn = DBConnect.get_connection()
 
+    @staticmethod
+    def getStores():
+        # RECUPERO TUTTI GLI ANNI DISPONIBILI
+        conn = DBConnect.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+              select store_name
+from stores s
+            """
+
+        cursor.execute(query)
         results = []
 
-        cursor = conn.cursor(dictionary=True)
-        query="""select s.store_name  
-from stores s """
-        cursor.execute(query)
         for row in cursor:
             results.append(row["store_name"])
 
         cursor.close()
         conn.close()
         return results
-    @staticmethod
-    def getAllOrders(store_name):
-        conn = DBConnect.get_connection()
-
-        results = []
-
-        cursor = conn.cursor(dictionary=True)
-        query = """select   o.*
-from orders o,stores s
-where store_name = %s
-and s.store_id =o.store_id """
-        cursor.execute(query, (store_name,))
-
-        for row in cursor:
-            results.append(row["order_id"])
-
-        cursor.close()
-        conn.close()
-        return results
 
     @staticmethod
-    #AATENZIONE: (numero_TOTALE_oggetti_nei_due_ordini)
-    # INTENDE quanti sono gli articoli(items) ordinati di un ordine,
-    # quindi la quantità totale di articoli per coppia di ordini
-    #K = NUMERO MAX DI GIORNI
-    def getOrder1Order2(store_name,k):
+    def getOrders(store_name):
+        # RECUPERO TUTTI GLI ANNI DISPONIBILI
         conn = DBConnect.get_connection()
-
-        results = []
-
         cursor = conn.cursor(dictionary=True)
+
         query = """
-            SELECT o1.order_id AS order1,
-                   o2.order_id AS order2,
+                  select o.*
+from stores s,orders o
+where s.store_id =o.store_id 
+and s.store_name = %s
+                """
 
-                   -- CALCOLO DIRETTAMENTE IL PESO DELL'ARCO
-                   (SUM(oi.quantity) + SUM(oi2.quantity))
-                   / DATEDIFF(o2.order_date, o1.order_date) AS weight
-
-            FROM orders o1, orders o2, order_items oi, order_items oi2, stores s
-
-            WHERE o1.store_id = o2.store_id
-
-            -- COLLEGO GLI ARTICOLI AL PRIMO ORDINE
-            AND oi.order_id = o1.order_id
-
-            -- COLLEGO GLI ARTICOLI AL SECONDO ORDINE
-            AND oi2.order_id = o2.order_id
-
-            -- COLLEGO GLI ORDINI ALLO STORE
-            AND s.store_id = o1.store_id
-
-            -- o1 È L'ORDINE PRECEDENTE
-            AND o1.order_date < o2.order_date
-
-            -- CONSIDERO SOLO LO STORE SCELTO
-            AND s.store_name = %s
-
-            -- LA DISTANZA MASSIMA È K GIORNI
-            AND DATEDIFF(o2.order_date, o1.order_date) <= %s
-
-            GROUP BY o1.order_id, o2.order_id
-            """
-
-        cursor.execute(query, (store_name, k))
+        cursor.execute(query, (store_name,))
+        results = []
 
         for row in cursor:
-            results.append((
-                row["order1"],
-                row["order2"],
-                row["weight"]
-            ))
+            results.append(Order(**row))
 
         cursor.close()
         conn.close()
-
         return results
 
+    @staticmethod
+    def getArchi(store_name,k):
+        # RECUPERO TUTTI GLI ANNI DISPONIBILI
+        conn = DBConnect.get_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    #Voglio capire quanti articoli ha un ordine:
-    #SQL SELECT order_id, SUM(quantity)
-    #FROM order_items
-    #GROUP BY order_id;
+        query = """
+                   select distinct o.order_id as ord1, o2.order_id as ord2,
+sum(oi.quantity + oi2.quantity)/DATEDIFF(o2.order_date,o.order_date) as peso
+from stores s,orders o,orders o2, order_items oi , order_items oi2
+where s.store_id =o.store_id 
+and s.store_name = %s
+and s.store_id =o2.store_id 
+and oi.order_id =o.order_id 
+and oi2.order_id =o2.order_id 
+and o.order_date < o2.order_date 
+and o.order_id < o2.order_id 
+and DATEDIFF(o2.order_date,o.order_date)<= %s
+group by o.order_id, o2.order_id
 
-    #Voglio vedere gli ordini di uno store
-    #SELECT * FROM orders WHERE store_id = 1;
+                    """
 
-    #GROUP BY raggruppo per order id di cui faccio la somma (oi.sum quantity)
+        cursor.execute(query, (store_name,k))
+        results = []
 
+        for row in cursor:
+            results.append((row["ord1"], row["ord2"], row["peso"]))
+
+        cursor.close()
+        conn.close()
+        return results

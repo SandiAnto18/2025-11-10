@@ -1,49 +1,78 @@
-
 import networkx as nx
 from database.DAO import DAO
 
-
 class Model:
-
     def __init__(self):
-        self._graph = nx.DiGraph()  # GRAFO ORIENTATO altrimenti nx.Graph()
-
+        self._graph=nx.DiGraph()
+        self._idMap= {}
     def getStores(self):
-        return DAO.getAllStores()
-    def buildGraph(self,store_name,k):
+        return DAO.getStores()
 
+    def getOrders(self,store_name):
+        return DAO.getOrders(store_name)
+
+    def buildGraph(self,store_name,k):
+        orders = DAO.getOrders(store_name)
         # SVUOTO IL GRAFO PRECEDENTE
         self._graph.clear()
 
-        # RECUPERO GLI ORDINI DELLO STORE SELEZIONATO
-        orders = DAO.getAllOrders(store_name)
-
-        # AGGIUNGO GLI ORDINI COME NODI DEL GRAFO
+        # AGGIUNGO I PILOTI COME NODI
         self._graph.add_nodes_from(orders)
 
-        # RECUPERO LE COPPIE DI ORDINI CON LE QUANTITÀ E I GIORNI
-        archi = DAO.getOrder1Order2(store_name,k)
+        self._idMap = {}
+        for d in orders:
+            self._idMap[d.order_id] = d
 
-        for row in archi:
-            #CONTROLLO L'OUTPUT RICEVUTO da DAO.py
-            #print(row[0],row[1],row[2])
-            #da DAO.getOrder1Order2 arriva order1=row[0],order2=row[1],....
-            #calcolo il peso dell'arco
+        # RECUPERO LE COPPIE DI PILOTI E I PESI
+        archi = DAO.getArchi(store_name,k)
 
-            # AGGIUNGO L'ARCO ORIENTATO CON IL SUO PESO
-            self._graph.add_edge(row[0],row[1],weight=row[2])
-
-
+        # AGGIUNGO GLI ARCHI CON IL LORO PESO
+        for g1, g2, peso in archi:
+            gene1 = self._idMap[g1]
+            gene2 = self._idMap[g2]
 
 
+            self._graph.add_edge(
+                gene1,
+                gene2,
+                weight=peso
+            )
+        print(archi)
 
-    def getNodes(self):
-        return len(self._graph.nodes())
+    def getNumNodi(self):
+        # RESTITUISCO IL NUMERO DI NODI
+        return self._graph.number_of_nodes()
 
-    def getEdges(self):
-        return len(self._graph.edges())
+    def getNumArchi(self):
+        # RESTITUISCO IL NUMERO DI ARCHI
+        return self._graph.number_of_edges()
 
     def getTop5(self):
         edges = sorted(self._graph.edges(data=True), key=lambda x: x[2]['weight'], reverse=True)
         return edges[:5]
-    #output (order1,order2,{"weight": peso})
+    # output (order1,order2,{"weight": peso})
+
+    def getCamminoPiuLungo(self, sourceStr):
+
+        # RECUPERO IL NODO DI PARTENZA TRAMITE IL SUO ORDER_ID
+        source = self._idMap[int(sourceStr)]
+
+        # CREO L'ALBERO DFS PARTENDO DAL NODO SELEZIONATO
+        tree = nx.dfs_tree(self._graph, source)
+
+        # INIZIALIZZO IL CAMMINO PIU' LUNGO
+        lp = []
+
+        # SCORRO TUTTI I NODI RAGGIUNGIBILI NELL'ALBERO DFS
+        for node in tree.nodes:
+
+            # RECUPERO IL PERCORSO DAL NODO INIZIALE AL NODO CORRENTE
+            tmp = nx.shortest_path(tree, source, node)
+
+            # CONTROLLO SE IL PERCORSO TROVATO E' PIU' LUNGO
+            if len(tmp) > len(lp):
+                lp = tmp
+
+        # RESTITUISCO IL CAMMINO PIU' LUNGO
+        return lp
+
